@@ -45,6 +45,14 @@ object smallCal extends Logging {
     // Choose the splinter group row only
     0.0
   }
+  
+  /**
+    * Difference between average dissimilarity to Objects and average dissimilarity to Objects of Splinter Group
+    *
+    * @param x Average Dissimilarity to Remaining Objects
+    * @param y Average Dissimilarity to Objects to Splinter Group
+    * @return the difference 
+    */
 
   def diff(
           x: Array[Double],
@@ -55,15 +63,13 @@ object smallCal extends Logging {
 
     var i = 0
     while(i < x.length){
-      d(i) = y(i) - x(i)
+      d(i) = x(i) - y(i)
       i += 1
     }
 
-    // Find the largest non negative average value
+    // TODO Find the largest non negative average value
     val p = d.max
     p
-  }
-  
-  
+  } 
 
 }

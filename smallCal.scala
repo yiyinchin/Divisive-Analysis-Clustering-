@@ -13,7 +13,7 @@ object smallCal extends Logging {
 
   def averageDissOO (
                     p: RDD[MatrixEntry]
-                    ): Double ={
+                    ): Array[Double] ={
     //Create a Coordinate Matrix from an RDD[MatrixEntry]
     val x: CoordinateMatrix = new CoordinateMatrix(p)
 
@@ -30,9 +30,40 @@ object smallCal extends Logging {
     val aveRow = sumRow.map{
       case (value) => (value / (m-1))
     }
-
+    
     //TODO find the largest non negative average value
     
   }
+  
+    /**
+    * Average dissimilarity to Objects of Splinter Group
+    */
+
+  def averageDissSG(
+                   x: CoordinateMatrix
+                   ): Double ={
+    // Choose the splinter group row only
+    0.0
+  }
+
+  def diff(
+          x: Array[Double],
+          y: Array[Double]
+          ): Double ={
+
+    val d: Array[Double]
+
+    var i = 0
+    while(i < x.length){
+      d(i) = y(i) - x(i)
+      i += 1
+    }
+
+    // Find the largest non negative average value
+    val p = d.max
+    p
+  }
+  
+  
 
 }

@@ -7,82 +7,63 @@ import org.apache.spark.rdd.RDD
 object smallCal extends Logging {
 
   /**
-    * Average dissimilarity to the Other Objects
-    *
+    * index of the row Max Average dissimilarity to the Other Objects
+    * @return the index of row with largest non-negative sum
+    *         returns -1 if the largest sum is less than zero
     */
 
-  def averageDissOO (
-                    x: CoordinateMatrix
-                    ): Double ={
+  def indexRMAD (
+                  x: CoordinateMatrix
+                ): Int ={
     // Get its size
     val m = x.numRows()
     val n = x.numCols()
 
-    // Sum of the elements in the row of matrix
-    val sumRow = x.toIndexedRowMatrix.rows.map{
-      case IndexedRow(i, value) => value.toArray.sum
+    // Average Sum of the elements in the row of matrix
+    val aveSumRow = x.toIndexedRowMatrix.rows.map{
+      case IndexedRow(i, value) => value.toArray.sum / (m-1)
     }
 
-    // Find the average of dissimilarity
-    val aveRow = sumRow.map{
-      case (value) => value / (m-1)
-    }
+    val aveSumRowArray = aveSumRow.collect()
 
-    //TODO find the largest non negative average value
-    val p = aveRow.max
-    p
+    val maxAveRowSum = aveSumRowArray.max
+
+    if(maxAveRowSum < 0) return -1
+
+    aveSumRowArray.indexOf(maxAveRowSum)
   }
 
-  /**
-    * Average dissimilarity to Objects of Splinter Group
-    */
-
-  def averageDissSG(
-                   x: CoordinateMatrix
-                   ): RDD[Double] ={
-
-    // Get its size
+  def diffAD(
+            x: CoordinateMatrix,
+            y: CoordinateMatrix
+            ): Int ={
+    //Get its size
     val m = x.numRows()
     val n = x.numCols()
+    val p = y.numRows()
+    val q = y.numCols()
 
-    // Sum of the elements in the row of matrix
-    val sumRow = x.toIndexedRowMatrix.rows.map{
-      case IndexedRow(i, value) => value.toArray.sum
+    // Average Sum of the elements in the row of matrix
+    val aveSumRow = x.toIndexedRowMatrix.rows.map{
+      case IndexedRow(i, value) => value.toArray.sum / (m - 1)
     }
 
-    // Find the average of dissimilarity
-    val aveRow = sumRow.map{
-      case value => value / n
+    //Average Sum of the elements in the Splinter Group
+    val aveSumSplinter = y.toIndexedRowMatrix.rows.map{
+      case IndexedRow(i, value) => value.toArray.sum / q
     }
 
-    // Only select the average of dissimilarity of the Remaining objects, without the splinter group
-    //TODO
-    aveRow
-  }
-
-  /**
-    * Difference between average dissimilarity to Objects and average dissimilarity to Objects of Splinter Group
-    *
-    * @param x Average Dissimilarity to Remaining Objects
-    * @param y Average Dissimilarity to Objects to Splinter Group
-    * @return the difference
-    */
-
-  def diff(
-          x: Array[Double],
-          y: Array[Double]
-          ): Double ={
-
-    val d: Array[Double]
-
-    var i = 0
-    while(i < x.length){
-      d(i) = x(i) - y(i)
-      i += 1
+    //difference betweeen the Sum of the row of matrix and the elements from the Splinter Group
+    val diffSum = aveSumRow.zip(aveSumSplinter).map{
+      case (u,v) => u-v
     }
 
-    // TODO Find the largest non negative average value
-    val p = d.max
-    p
+    val diffSumArray = diffSum.collect()
+
+    val maxDiffSum = diffSumArray.max
+
+    if(maxDiffSum < 0) return -1
+
+    diffSumArray.indexOf(maxDiffSum)
   }
 }

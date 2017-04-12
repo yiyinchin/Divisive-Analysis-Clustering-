@@ -1,7 +1,7 @@
 package org.apache.spark.mllib
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.mllib.linalg.distributed.{CoordinateMatrix, IndexedRow}
+import org.apache.spark.mllib.linalg.distributed.{IndexedRow, RowMatrix}
 import org.apache.spark.rdd.RDD
 
 object smallCal extends Logging {
@@ -12,15 +12,15 @@ object smallCal extends Logging {
     *         returns -1 if the largest sum is less than zero
     */
 
-  def indexRMAD (
-                  x: CoordinateMatrix
-                ): Int ={
+ def indexRMAD(
+                 x: RowMatrix
+               ): Int ={
     // Get its size
     val m = x.numRows()
     val n = x.numCols()
 
     // Average Sum of the elements in the row of matrix
-    val aveSumRow = x.toIndexedRowMatrix.rows.map{
+    val aveSumRow = x.rows.map{
       case IndexedRow(i, value) => value.toArray.sum / (m-1)
     }
 
@@ -34,8 +34,8 @@ object smallCal extends Logging {
   }
 
   def diffAD(
-            x: CoordinateMatrix,
-            y: CoordinateMatrix
+            x: RowMatrix,
+            y: RowMatrix
             ): Int ={
     //Get its size
     val m = x.numRows()
@@ -44,12 +44,12 @@ object smallCal extends Logging {
     val q = y.numCols()
 
     // Average Sum of the elements in the row of matrix
-    val aveSumRow = x.toIndexedRowMatrix.rows.map{
+    val aveSumRow = x.rows.map{
       case IndexedRow(i, value) => value.toArray.sum / (m - 1)
     }
 
     //Average Sum of the elements in the Splinter Group
-    val aveSumSplinter = y.toIndexedRowMatrix.rows.map{
+    val aveSumSplinter = y.rows.map{
       case IndexedRow(i, value) => value.toArray.sum / q
     }
 

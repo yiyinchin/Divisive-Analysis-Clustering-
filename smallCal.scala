@@ -130,18 +130,16 @@ object smallCal extends Logging {
   }
   
   // Local Matrix, dense Matrix
-import org.apache.spark.mllib.linalg.{Matrix, Matrices}
-val dm: Matrix = Matrices.dense(5,5, Array(0.0,2.0,6.0,10.0,9.0,2.0,0.0,5.0,9.0,8.0,6.0,5.0,0.0,4.0,5.0,10.0,9.0,4.0,0.0,3.0,9.0,8.0,5.0,3.0,0.0))
+import org.apache.spark.mllib.linalg.{Vectors, Matrices}
 
-// Dense matrix to RDD[Vector] <- leads to RowMatrix
-def matrixToRDD(m: Matrix): RDD[Vector] = {
-      val columns = m.toArray.grouped(m.numRows)
-      val rows = columns.toSeq.transpose
-      val vectors = rows.map(row => new DenseVector(row.toArray))
-      sc.parallelize(vectors)
-      }
+val rows = sc.parallelize(Seq(
+ (0L, Array(0.0,2.0,6.0,10.0,9.0)),
+ (0L, Array(2.0,0.0,5.0,9.0,8.0)),
+ (0L, Array(6.0,5.0,0.0,4.0,5.0)),
+ (0L, Array(10.0,9.0,4.0,0.0,3.0)),
+ (0L, Array(9.0,8.0,5.0,3.0,0.0)))
+).map{ case (i, xs) => IndexedRow(i, Vectors.dense(xs))}
 
-val rows = matrixToRDD(dm)
-val mat = new RowMatrix(rows)
+val indexedRowMatrix = new IndexedRowMatrix(rows)
 
 }

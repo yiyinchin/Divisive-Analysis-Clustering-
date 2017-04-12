@@ -1,3 +1,4 @@
+```
 # Divisive-Analysis-Clustering-
 <console>:46: error: constructor cannot be instantiated to expected type;
  found   : org.apache.spark.mllib.linalg.distributed.IndexedRow
@@ -29,3 +30,4 @@ You may wish to define T as +T instead. (SLS 4.5)
                                        ^
 <console>:80: error: value - is not a member of Any
              case (u,v) => u-v
+```

@@ -1,7 +1,7 @@
 package org.apache.spark.mllib
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.mllib.linalg.distributed.{IndexedRow, RowMatrix}
+import org.apache.spark.mllib.linalg.distributed.{IndexedRow, IndexedRowMatrix}
 import org.apache.spark.rdd.RDD
 
 object smallCal extends Logging {
@@ -13,7 +13,7 @@ object smallCal extends Logging {
     */
 
  def indexRMAD(
-                 x: RowMatrix
+               x: IndexedRowMatrix
                ): Int ={
     // Get its size
     val m = x.numRows()
@@ -34,8 +34,8 @@ object smallCal extends Logging {
   }
 
   def diffAD(
-            x: RowMatrix,
-            y: RowMatrix
+            x: IndexedRowMatrix,
+            y: IndexedRowMatrix
             ): Int ={
     //Get its size
     val m = x.numRows()

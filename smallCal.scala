@@ -141,6 +141,6 @@ val rows = sc.parallelize(Seq(
  (0L, Array(9.0,8.0,5.0,3.0,0.0)))
 ).map{ case (i, xs) => IndexedRow(i, Vectors.dense(xs))}
 
-val indexedRowMatrix = new IndexedRowMatrix(rows)
+val indexedRowMatrix = new IndexedRowMatrix(rows, 5,5)
 
 }

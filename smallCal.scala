@@ -12,27 +12,28 @@ object smallCal extends Logging {
     *         returns -1 if the largest sum is less than zero
     */
 
- def indexRMAD(
-               x: IndexedRowMatrix
+  def indexRMAD(
+                 x: IndexedRowMatrix
                ): Int ={
     // Get its size
     val m = x.numRows()
     val n = x.numCols()
 
+    require(m == n)
+
     // Average Sum of the elements in the row of matrix
     val aveSumRow = x.rows.map{
-      case IndexedRow(i, value) => value.toArray.sum / (m-1)
+      case IndexedRow(i, value) => (i, value.toArray.sum / (m-1))
     }
 
     val aveSumRowArray = aveSumRow.collect()
 
-    val maxAveRowSum = aveSumRowArray.max
+    val maxAveRowSum:(Long, Double)= aveSumRowArray.max
 
-    if(maxAveRowSum < 0) return -1
+    //if(maxAveRowSum < 0) return -1
 
     aveSumRowArray.indexOf(maxAveRowSum)
   }
-
   def diffAD(
             x: IndexedRowMatrix,
             y: IndexedRowMatrix

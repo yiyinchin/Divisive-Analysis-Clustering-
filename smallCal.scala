@@ -32,7 +32,7 @@ object smallCal extends Logging {
 
     if(maxAveRowSum._2 < 0) return -1
 
-    aveSumRowArray.indexOf(maxAveRowSum)
+    aveSumRowArray.indexOf(maxAveRowSum._2)
   }
   def diffAD(
             x: IndexedRowMatrix,

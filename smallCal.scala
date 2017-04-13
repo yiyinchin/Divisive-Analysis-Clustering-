@@ -30,7 +30,7 @@ object smallCal extends Logging {
 
     val maxAveRowSum:(Long, Double)= aveSumRowArray.max
 
-    //if(maxAveRowSum < 0) return -1
+    if(maxAveRowSum._2 < 0) return -1
 
     aveSumRowArray.indexOf(maxAveRowSum)
   }

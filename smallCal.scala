@@ -21,7 +21,7 @@ object smallCal extends Logging {
 
     require(m == n)
     
-    val initStartTime = System.nanoTime()
+    //val initStartTime = System.nanoTime()
 
     // Average Sum of the elements in the row of matrix
     val aveSumRow = x.rows.map{
@@ -36,10 +36,11 @@ object smallCal extends Logging {
 
     aveSumRowArray.indexOf(maxAveRowSum)
     
-    val initTimeInSeconds = (System.nanoTime() - initStartTime) / 1e9
+    //val initTimeInSeconds = (System.nanoTime() - initStartTime) / 1e9
     
-    logInfo(f"Calc took $initTimeInSeconds%.3f seconds.")
+    //logInfo(f"Calc took $initTimeInSeconds%.3f seconds.")
   }
+  
   def diffAD(
             x: IndexedRowMatrix,
             y: IndexedRowMatrix

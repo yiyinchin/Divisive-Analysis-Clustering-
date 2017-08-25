@@ -1,10 +1,10 @@
 package org.apache.spark.mllib
 
-import org.apache.spark.internal.Logging
+import org.apache.spark.mllib.linalg._
 import org.apache.spark.mllib.linalg.distributed.{IndexedRow, IndexedRowMatrix}
 import org.apache.spark.rdd.RDD
 
-object smallCal extends Logging {
+object smallCal{
 
   /**
     * index of the row Max Average dissimilarity to the Other Objects
@@ -135,7 +135,7 @@ object smallCal extends Logging {
           " and " + v2.getClass)
     }
     math.abs(distance)
-  }
+}
   
   // Local Matrix, dense Matrix
 import org.apache.spark.mllib.linalg.{Vectors, Matrices}

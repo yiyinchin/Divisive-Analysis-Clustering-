@@ -140,14 +140,25 @@ object smallCal{
   // Local Matrix, dense Matrix
 import org.apache.spark.mllib.linalg.{Vectors, Matrices}
 
-val rows = sc.parallelize(Seq(
- (0L, Array(0.0,2.0,6.0,10.0,9.0)),
- (0L, Array(2.0,0.0,5.0,9.0,8.0)),
- (0L, Array(6.0,5.0,0.0,4.0,5.0)),
- (0L, Array(10.0,9.0,4.0,0.0,3.0)),
- (0L, Array(9.0,8.0,5.0,3.0,0.0)))
-).map{ case (i, xs) => IndexedRow(i, Vectors.dense(xs))}
+  def main(args: Array[String]){
 
-val indexedRowMatrix = new IndexedRowMatrix(rows,5L,5)
+    val rows = sc.parallelize(Seq(
+      (0L, Array(0.0,2.0,6.0,10.0,9.0)),
+      (0L, Array(2.0,0.0,5.0,9.0,8.0)),
+      (0L, Array(6.0,5.0,0.0,4.0,5.0)),
+      (0L, Array(10.0,9.0,4.0,0.0,3.0)),
+      (0L, Array(9.0,8.0,5.0,3.0,0.0)))
+    ).map{ case (i, xs) => IndexedRow(i, Vector.dense(xs))}
 
+    val indexedRowMatrix = new IndexedRowMatrix(rows, 5L, 5)
+
+    val rowLargestSum = indexRMAD(indexedRowMatrix)
+
+    println("The row with the largest sum: " = rowLargestSum + 1)
+
+    val diffAveDist = diffAD(indexedRowMatrix, indexedRowMatrix)
+
+    println("The difference of average distance: " = diffAveDist)
+
+  }
 }

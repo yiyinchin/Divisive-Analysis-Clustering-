@@ -1,8 +1,10 @@
 package org.apache.spark.mllib
 
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.linalg._
 import org.apache.spark.mllib.linalg.distributed.{IndexedRow, IndexedRowMatrix}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.mllib.linalg.{Matrices, Vector, Vectors}
 
 object smallCal{
 
@@ -137,10 +139,10 @@ object smallCal{
     math.abs(distance)
 }
   
-  // Local Matrix, dense Matrix
-import org.apache.spark.mllib.linalg.{Vectors, Matrices}
-
   def main(args: Array[String]){
+
+    val sparkConf = new SparkConf().setAppName("DIANA")
+    val sc = new SparkContext(sparkConf)
 
     val rows = sc.parallelize(Seq(
       (0L, Array(0.0,2.0,6.0,10.0,9.0)),
@@ -148,7 +150,7 @@ import org.apache.spark.mllib.linalg.{Vectors, Matrices}
       (0L, Array(6.0,5.0,0.0,4.0,5.0)),
       (0L, Array(10.0,9.0,4.0,0.0,3.0)),
       (0L, Array(9.0,8.0,5.0,3.0,0.0)))
-    ).map{ case (i, xs) => IndexedRow(i, Vector.dense(xs))}
+    ).map{ case (i, xs) => IndexedRow(i, Vectors.dense(xs))}
 
     val indexedRowMatrix = new IndexedRowMatrix(rows, 5L, 5)
 

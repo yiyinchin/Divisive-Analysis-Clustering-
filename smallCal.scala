@@ -154,11 +154,11 @@ import org.apache.spark.mllib.linalg.{Vectors, Matrices}
 
     val rowLargestSum = indexRMAD(indexedRowMatrix)
 
-    println("The row with the largest sum: " = rowLargestSum + 1)
+    println("The row with the largest sum: " + rowLargestSum + 1)
 
     val diffAveDist = diffAD(indexedRowMatrix, indexedRowMatrix)
 
-    println("The difference of average distance: " = diffAveDist)
+    println("The difference of average distance: " + diffAveDist)
 
   }
 }

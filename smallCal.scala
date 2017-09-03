@@ -80,6 +80,9 @@ object smallCal{
    /**
     * Returns the manhattan distance between two vectors.
     *
+    * This function is used for calculating dissimilarities.
+    * If the given data is already a dissimilarity matrix, this this will be ignored.... (?)
+    *
     * The manhattan distance is used to measure the diameter of a cluster with the largest diameter.
     * @param v1 first Vector
     * @param v2 Second Vector

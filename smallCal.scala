@@ -167,3 +167,11 @@ object smallCal{
 
   }
 }
+
+val r = sc.parallelize(Seq(
+  (0L, Array(0.0,5.0,9.0,8.0)),
+  (0L, Array(5.0,0.0,4.0,5.0)),
+  (0L, Array(9.0,4.0,0.0,3.0)),
+  (0L, Array(8.0,5.0,3.0,0.0)))
+).map{ case (i, xs) => IndexedRow(i, Vectors.dense(xs))}
+

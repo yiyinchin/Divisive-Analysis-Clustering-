@@ -142,7 +142,7 @@ object smallCal{
     math.abs(distance)
 }
   
-  def main(args: Array[String]): Unit ={
+def main(args: Array[String]): Unit ={
 
     if(args.length < 1){
       System.err.println("Usage: smallCal <file>")
@@ -169,6 +169,8 @@ object smallCal{
 
     //Returns the number of rows in the Dataset
     val numRows = data.count().toInt
+    
+    val longNum = numRows.toLong
 
     //Defining a two dimensional array
     var myMatrix = ofDim[Double](numRows, numRows)
@@ -185,7 +187,7 @@ object smallCal{
 
     val rows = sc.parallelize(seqMat).map{case (y) => IndexedRow(0L, Vectors.dense(y))}
 
-    val irm = new IndexedRowMatrix(rows, 5L, numRows)
+    val irm = new IndexedRowMatrix(rows, longNum, numRows)
 
     val rowLargestSum = indexRMAD(irm)
 

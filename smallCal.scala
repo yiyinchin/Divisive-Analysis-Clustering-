@@ -142,29 +142,54 @@ object smallCal{
     math.abs(distance)
 }
   
-  def main(args: Array[String]){
+  def main(args: Array[String]): Unit ={
+
+    if(args.length < 1){
+      System.err.println("Usage: smallCal <file>")
+      System.exit(1)
+    }
+
+    //Create spark session
+    val spark = SparkSession
+        .builder
+        .appName("Diana")
+        .getOrCreate()
 
     val sparkConf = new SparkConf().setAppName("DIANA")
+
     val sc = new SparkContext(sparkConf)
 
-    val rows = sc.parallelize(Seq(
-      (0L, Array(0.0,2.0,6.0,10.0,9.0)),
-      (0L, Array(2.0,0.0,5.0,9.0,8.0)),
-      (0L, Array(6.0,5.0,0.0,4.0,5.0)),
-      (0L, Array(10.0,9.0,4.0,0.0,3.0)),
-      (0L, Array(9.0,8.0,5.0,3.0,0.0)))
-    ).map{ case (i, xs) => IndexedRow(i, Vectors.dense(xs))}
+    //load the data
+    val data = spark
+      .read.format("csv").load("path/to/data")
+      .cache()
 
-    val indexedRowMatrix = new IndexedRowMatrix(rows, 5L, 5)
+    //
+    val dataC = data.collect()
 
-    val rowLargestSum = indexRMAD(indexedRowMatrix)
+    //Returns the number of rows in the Dataset
+    val numRows = data.count().toInt
 
-    println("The row with the largest sum: " + rowLargestSum + 1)
+    //Defining a two dimensional array
+    var myMatrix = ofDim[Double](numRows, numRows)
 
-    val diffAveDist = diffAD(indexedRowMatrix, indexedRowMatrix)
+    //build a matrix
+    for(i <- 0 until numRows){
+      for(j <- 0 until numRows){
+        myMatrix(i)(j) = dataC(i).getString(j).toDouble
+      }
+    }
 
-    println("The difference of average distance: " + diffAveDist)
+    //Convert the data into Indexed Row Matrix
+    val seqMat = myMatrix.toSeq
 
+    val rows = sc.parallelize(seqMat).map{case (y) => IndexedRow(0L, Vectors.dense(y))}
+
+    val irm = new IndexedRowMatrix(rows, 5L, numRows)
+
+    val rowLargestSum = indexRMAD(irm)
+
+    println("The row with the largest Sum: " + rowLargestSum)
   }
 }
 

@@ -160,9 +160,7 @@ def main(args: Array[String]): Unit ={
     val sc = new SparkContext(sparkConf)
 
     //load the data
-    val data = spark
-      .read.format("csv").load("path/to/data")
-      .cache()
+    val data = spark.read.format("csv").load(args(0)).cache()
 
     //
     val dataC = data.collect()

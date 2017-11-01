@@ -5,6 +5,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.mllib.linalg._
 import org.apache.spark.mllib.linalg.distributed.{IndexedRow, IndexedRowMatrix}
 import org.apache.spark.mllib.linalg.{Matrices, Vector, Vectors}
+import Array._
 
 object smallCal{
 
@@ -155,9 +156,7 @@ def main(args: Array[String]): Unit ={
         .appName("Diana")
         .getOrCreate()
 
-    val sparkConf = new SparkConf().setAppName("DIANA")
-
-    val sc = new SparkContext(sparkConf)
+    val sc = spark.sparkContext
 
     //load the data
     val data = spark.read.format("csv").load(args(0)).cache()
@@ -176,6 +175,8 @@ def main(args: Array[String]): Unit ={
     //build a matrix
     for(i <- 0 until numRows){
       for(j <- 0 until numRows){
+        //System.err.println(dataC(i))
+	//System.err.println(dataC(i).getString(j))
         myMatrix(i)(j) = dataC(i).getString(j).toDouble
       }
     }

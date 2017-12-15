@@ -115,38 +115,26 @@ object DIANA {
   }
 
   /**
-    * Dissimilarity of the Splinter Group
     *
-    * @param x dissimilarity matrix
-    * @param key key of the highest average dissimilarity
-    * @return dissimilarity to objects of splinter group
+    *
+    * @param keyedMat
+    * @param key
+    * @param AllKey
+    * @return
     */
 
   def objSplinter(
-               x: Array[Array[Double]],
-               key: Int
+               keyedMat: Array[(Int,Array[Double])],
+               key: Array[Int],
+               AllKey: Array[Int]
                ): Array[Array[Double]] ={
 
-    val m = x.length
+    // The remain keys(indexes)
+    val remainKeys = AllKey diff key
 
-    val index = key-1
+    val splinterObj = keyedMat.filter{ case (i, value) => remainKeys.exists(_==i)}
 
-    var splinter = ofDim[Double](m-1, 1)   //TODO here something need to be changed = =
-
-    var p = 0
-
-    for(i <- 0 until m){
-      if(i != index){
-        var q = 0
-        for(j <- 0 until m){
-          if(j == index){
-            splinter(p)(q) = (x(i))(j)
-            q += 1
-          }
-        }
-        p += 1
-      }
-    }
+    val splinter = splinterObj.map{ case(i, value) => key map value}
 
     splinter
 
@@ -166,25 +154,30 @@ object DIANA {
                  remainGroup: Array[(Int, Array[Double])],
                  splinterkeys: Array[Int]
                  ): Array[(Int, Array[Double])] ={
-    
+
     // make splinter group from matrix
-      // select the splinter group according to the splinter keys
-      // only select the splinter index for the matrix
-    
-    val splinterGroup: Array[(Int, Array[Double])] = Array()
-    
+
+    // select the splinter group according to the splinter keys
+    val splinterRows = fullMatrix.filter{ case (i, value) => splinterkeys.exists(_==i)}
+
+    // only select the splinter index for the matrix
+    val splinterGroup: Array[(Int, Array[Double])] = splinterRows.map{ case(i, value) => (i, splinterkeys map value) }
+
     // find the maximum "diameters" from each groups
-    
-    val maxSplinter: Double = 0.0
-    
-    val maxRemain: Double = 0.0
-    
+
+    val maxSplinter = splinterGroup.map{ case(i, value) => value.max }
+
+    val maxRemain = remainGroup.map{ case(i, value) => value.max }
+
     // compare the chosen diameters from the groups
+    val splinterMax = maxSplinter.collect.max
+
+    val remainMax = maxRemain.collect.max
+
     // chose the largest or the bigger diameter group
-    
-    if(maxSplinter > maxRemain) return splinterGroup else remainGroup
-    
-    
+
+    if(splinterMax > remainMax) return splinterGroup else remainGroup
+
   }
 
 
@@ -226,7 +219,7 @@ object DIANA {
       }
     }
 
-    val paraKey = sc.parallelize((1 to numRows))
+    val paraKey = sc.parallelize((0 until numRows))
 
     val paraMat = sc.parallelize(myMatrix.toSeq)
 

@@ -126,11 +126,11 @@ object DIANA {
   def objSplinter(
                keyedMat: Array[(Int,Array[Double])],
                key: Array[Int],
-               AllKey: Array[Int]
+               AllKey: Array[Int] // need to find a way to get this
                ): Array[Array[Double]] ={
 
     // The remain keys(indexes)
-    val remainKeys = AllKey diff key
+    val remainKeys = AllKey diff key // need to fix this, not working?
 
     val splinterObj = keyedMat.filter{ case (i, value) => remainKeys.exists(_==i)}
 

@@ -133,10 +133,8 @@ object DIANA {
     val remainKeys = AllKey diff key // need to fix this, not working?
 
     val splinterObj = keyedMat.filter{ case (i, value) => remainKeys.exists(_==i)}
-   
-    val splinter = keyedMat.filter{ case(i, value) => key == i } 
 
-    //val splinter = splinterObj.map{ case(i, value) => key map value}
+    val splinter = splinterObj.map{ case(i, value) => key map value}
 
     splinter
 

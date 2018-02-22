@@ -108,7 +108,7 @@ object DIANA {
     }
 
     val remains = buf.map{
-      case (i, value) => value.remove(key-1, 1); (i, value.toArray)
+      case (i, value) => value.remove(key, 1); (i, value.toArray)
     }
 
     remains

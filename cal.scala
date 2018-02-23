@@ -95,8 +95,8 @@ object DIANA {
     */
 
   def objRemains(
-                x: Array[(Int, Array[Double])],
-                key: Int
+                x: Array[(Int, Array[Double])], //  need to find which one to insert
+                key: Int // = = key: Array[key] ? 
                 ): Array[(Int, Array[Double])] ={
 
     val reduce1 = x.filter{

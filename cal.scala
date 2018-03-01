@@ -170,9 +170,9 @@ object DIANA {
     val maxRemain = remainGroup.map{ case(i, value) => value.max }
 
     // compare the chosen diameters from the groups
-    val splinterMax = maxSplinter.collect.max
+    val splinterMax = maxSplinter.max
 
-    val remainMax = maxRemain.collect.max
+    val remainMax = maxRemain.max
 
     // chose the largest or the bigger diameter group
 

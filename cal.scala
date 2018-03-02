@@ -96,20 +96,15 @@ object DIANA {
 
   def objRemains(
                 x: Array[(Int, Array[Double])], //  need to find which one to insert
-                key: Int // = = key: Array[key] ? 
+                key: Array[Int],
+                allKey: Array[Int]
                 ): Array[(Int, Array[Double])] ={
 
-    val reduce1 = x.filter{
-      case (i, value) => i != key
-    }
+    val remainKeys = AllKey diff key
 
-    val buf = reduce1.map{
-      case (i, value) => (i, value.toBuffer)
-    }
+    val kickthecoloumnout = x.map{ case(i, value) => (i, remainKeys map value)}
 
-    val remains = buf.map{
-      case (i, value) => value.remove(key, 1); (i, value.toArray)
-    }
+    val remains = kickthecoloumnout.filter{ case (i, value) => remainKeys.exists(_==i)}
 
     remains
   }
@@ -130,7 +125,7 @@ object DIANA {
                ): Array[Array[Double]] ={
 
     // The remain keys(indexes)
-    val remainKeys = AllKey diff key // need to fix this, not working?
+    val remainKeys = AllKey diff key 
 
     val splinterObj = keyedMat.filter{ case (i, value) => remainKeys.exists(_==i)}
 
@@ -156,12 +151,12 @@ object DIANA {
                  ): Array[(Int, Array[Double])] ={
 
     // make splinter group from matrix
+   
+    // only select the splinter index for the matrix
+    val splinterGroup: Array[(Int, Array[Double])] = fullMatrix.map{ case(i, value) => (i, splinterkeys map value) }
 
     // select the splinter group according to the splinter keys
-    val splinterRows = fullMatrix.filter{ case (i, value) => splinterkeys.exists(_==i)}
-
-    // only select the splinter index for the matrix
-    val splinterGroup: Array[(Int, Array[Double])] = splinterRows.map{ case(i, value) => (i, splinterkeys map value) }
+    val splinterRows = splinterGroup.filter{ case (i, value) => splinterkeys.exists(_==i)}
 
     // find the maximum "diameters" from each groups
 

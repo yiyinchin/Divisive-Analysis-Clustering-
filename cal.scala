@@ -10,23 +10,22 @@ object DIANA {
   /**
     * key of the row with the highest Average Dissimilarity to the other objects
     *
-    * @param x dissimilarity matrix with key
+    * @param keyedMat dissimilarity matrix with key
     * @return the key of the row with larges non-negative sum
     *         returns -1 if the largest sum is less than zero
     */
 
 
   def keyRMAD(
-             x: Array[(Int, Array[Double])]
+             keyedMat: Array[(Int, Array[Double])]
              ): Int ={
-    val m = x.length // maybe (x.count).toInt if the matrix is a RDD
+    val m = (keyedMat.count).toInt
+    //val m = x.length // maybe (x.count).toInt if the matrix is a RDD
 
     val inStartTime = System.nanoTime()
 
     //Average Sum of the elements in the row of matrix
-    val aveSumRow = x.map {
-      case (i, value) => (value.sum / (m - 1), i)
-    }
+    val aveSumRow = keyedMat.map { case (i, value) => (value.sum / (m - 1), i)}
 
     //Get the max value and key
     val maxAveSum = aveSumRow.max
@@ -53,29 +52,24 @@ object DIANA {
             remainGroup: Array[(Int, Array[Double])],
             splinterGroup: Array[Array[Double]]
             ): Int ={
-    val m = remainGroup.length  //maybe (x.count).toInt if it is RDD
+    val m = (remainGroup.count).toInt
+    //val m = remainGroup.length  //maybe (x.count).toInt if it is RDD
     val n = splinterGroup(1).length
 
     //Average Sum of the elements in the remain dissimilarity matrix
 
-    val aveSumRemain = remainGroup.map{
-      case (key, value) => (key, value.sum/(m-1))
-    }
+    val aveSumRemain = remainGroup.map{ case (key, value) => (key, value.sum/(m-1))}
 
     //Average Sum of the elements in the splinter group
 
-    val aveSumSplinter = splinterGroup.map{
-      case (value) => value.sum/n
-    }
+    val aveSumSplinter = splinterGroup.map{ case (value) => value.sum/n }
 
     //Combine 2 Groups together
 
     val combine = aveSumRemain.zip(aveSumSplinter) // if is not working then (aveSumRemain.collect).zip.(aveSumSplinter)
 
     //difference between the Sum of the Remaining objects of each rows and the elements from the splinter group
-    val diffSum = combine.map{
-      case ((key, valueR), valueS) => (valueR-valueS, key)
-    }
+    val diffSum = combine.map{ case ((key, valueR), valueS) => (valueR-valueS, key)}
 
     val maxDiffSum = diffSum.max
 
@@ -85,50 +79,52 @@ object DIANA {
 
   }
 
-
   /**
-    * Dissimilarity of the Remaining Objects
-    *
-    * @param x dissimilarity matrix with a key
-    * @param key key of the highest average dissimilarity
+    * Dissimilarity of the remaining objects
+    * 
+    * @param keyedmat dissimilarity matrix with a key
+    * @param keyA Array of the key of the highest average dissimilarity
+    * @param allKey Array of all of the keys
     * @return dissimilarity matrix of the remaining objects
     */
 
   def objRemains(
-                x: Array[(Int, Array[Double])], //  need to find which one to insert
-                key: Array[Int],
+                keyedmat: Array[(Int, Array[Double])],
+                keyA: Array[Int],
                 allKey: Array[Int]
                 ): Array[(Int, Array[Double])] ={
 
-    val remainKeys = AllKey diff key
+    val remainKeys = allKey diff keyA
 
-    val kickthecoloumnout = x.map{ case(i, value) => (i, remainKeys map value)}
+    val keyedValueRemove = keyedmat.map{ case(i, value) => (i, remainKeys map value)}
 
-    val remains = kickthecoloumnout.filter{ case (i, value) => remainKeys.exists(_==i)}
+    val remains = keyedValueRemove.filter{ case(i, value) => remainKeys.exists(_==i)}
 
     remains
   }
 
   /**
+    * Dissimilarity of the Splinter Group
     *
-    *
-    * @param keyedMat
-    * @param key
-    * @param AllKey
-    * @return
+    * @param keyedMat full dissimilarity matrix with a key
+    * @param key key of the highest average dissimilarity
+    * @param AllKey all of the keys (indexes)
+    * @return objects of splinter group
     */
 
   def objSplinter(
                keyedMat: Array[(Int,Array[Double])],
                key: Array[Int],
-               AllKey: Array[Int] // need to find a way to get this
+               AllKey: Array[Int]
                ): Array[Array[Double]] ={
 
     // The remain keys(indexes)
-    val remainKeys = AllKey diff key 
+    val remainKeys = AllKey diff key
 
+    //filter out the remaining keys
     val splinterObj = keyedMat.filter{ case (i, value) => remainKeys.exists(_==i)}
 
+    //from the filtered group, extract the objects of the splinter group
     val splinter = splinterObj.map{ case(i, value) => key map value}
 
     splinter
@@ -151,12 +147,12 @@ object DIANA {
                  ): Array[(Int, Array[Double])] ={
 
     // make splinter group from matrix
-   
-    // only select the splinter index for the matrix
-    val splinterGroup: Array[(Int, Array[Double])] = fullMatrix.map{ case(i, value) => (i, splinterkeys map value) }
 
     // select the splinter group according to the splinter keys
-    val splinterRows = splinterGroup.filter{ case (i, value) => splinterkeys.exists(_==i)}
+    val splinterRows = fullMatrix.filter{ case (i, value) => splinterkeys.exists(_==i)}
+
+    // only select the splinter index for the matrix
+    val splinterGroup: Array[(Int, Array[Double])] = splinterRows.map{ case(i, value) => (i, splinterkeys map value) }
 
     // find the maximum "diameters" from each groups
 
@@ -174,7 +170,6 @@ object DIANA {
     if(splinterMax > remainMax) return splinterGroup else remainGroup
 
   }
-
 
 
   def main(
@@ -214,6 +209,7 @@ object DIANA {
       }
     }
 
+    // Key are equal to the indexes
     val paraKey = sc.parallelize((0 until numRows))
 
     val paraMat = sc.parallelize(myMatrix.toSeq)
@@ -221,25 +217,4 @@ object DIANA {
     val keyedMat = paraKey.zip(paraMat)
 
   }
-
-
-
-}
-
-var splinter2 = ofDim[Double](sizeM-2, 2)
-
-var p = 0
-for (i <- 0 until sizeM){
-    if(i != index1 && i != index2){
-      print(i)
-      var q = 0
-         for(j <- 0 until sizeM){
-           if(j == index1 || j == index2){
-                print(j)
-             splinter2(p)(q) = (myMatrix(i))(j)
-             q += 1
-           }
-         }
-       p += 1
-    }
 }

@@ -19,7 +19,7 @@ object DIANA {
   def keyRMAD(
              keyedMat: Array[(Int, Array[Double])]
              ): Int ={
-    val m = (keyedMat.count).toInt
+    val m = keyedMat.length
     //val m = x.length // maybe (x.count).toInt if the matrix is a RDD
 
     val inStartTime = System.nanoTime()
@@ -52,7 +52,7 @@ object DIANA {
             remainGroup: Array[(Int, Array[Double])],
             splinterGroup: Array[Array[Double]]
             ): Int ={
-    val m = (remainGroup.count).toInt
+    val m = remainGroup.length
     //val m = remainGroup.length  //maybe (x.count).toInt if it is RDD
     val n = splinterGroup(1).length
 
@@ -66,7 +66,7 @@ object DIANA {
 
     //Combine 2 Groups together
 
-    val combine = aveSumRemain.zip(aveSumSplinter) // if is not working then (aveSumRemain.collect).zip.(aveSumSplinter)
+    val combine = aveSumRemain.zip(aveSumSplinter) 
 
     //difference between the Sum of the Remaining objects of each rows and the elements from the splinter group
     val diffSum = combine.map{ case ((key, valueR), valueS) => (valueR-valueS, key)}
@@ -81,7 +81,7 @@ object DIANA {
 
   /**
     * Dissimilarity of the remaining objects
-    * 
+    *
     * @param keyedmat dissimilarity matrix with a key
     * @param keyA Array of the key of the highest average dissimilarity
     * @param allKey Array of all of the keys
@@ -217,4 +217,8 @@ object DIANA {
     val keyedMat = paraKey.zip(paraMat)
 
   }
+
+
+
 }
+

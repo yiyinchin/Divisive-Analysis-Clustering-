@@ -1,203 +1,246 @@
-package org.apache.spark.mllib
-
-import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.mllib.linalg._
-import org.apache.spark.mllib.linalg.distributed.{IndexedRow, IndexedRowMatrix}
-import org.apache.spark.mllib.linalg.{Matrices, Vector, Vectors}
 import Array._
+import scala.collection.mutable.ArrayBuffer
 
-object smallCal{
+/**
+  * Created by chinyiy on 11/12/17.
+  */
+object DIANA {
+
 
   /**
-    * index of the row Max Average dissimilarity to the Other Objects
-    * @return the index of row with largest non-negative sum
+    * key of the row with the highest Average Dissimilarity to the other objects
+    *
+    * @param keyedMat dissimilarity matrix with key
+    * @return the key of the row with larges non-negative sum
     *         returns -1 if the largest sum is less than zero
     */
 
-  def indexRMAD(
-                 x: IndexedRowMatrix
-               ): Int ={
-    // Get its size
-    val m = x.numRows()
-    val n = x.numCols()
 
-    require(m == n)
-    
-    //val initStartTime = System.nanoTime()
+  def keyRMAD(
+             keyedMat: org.apache.spark.rdd.RDD[(Int, Array[Double])]
+             ): Int ={
+    val m = (keyedMat.count).toInt
+    //val m = x.length // maybe (x.count).toInt if the matrix is a RDD
 
-    // Average Sum of the elements in the row of matrix
-    val aveSumRow = x.rows.map{
-      case IndexedRow(i, value) => (i, value.toArray.sum / (m-1))
-    }
+    val inStartTime = System.nanoTime()
 
-    val aveSumRowArray = aveSumRow.collect()
+    //Average Sum of the elements in the row of matrix
+    val aveSumRow = keyedMat.map { case (i, value) => (value.sum / (m - 1), i)}
 
-    val maxAveRowSum:(Long, Double)= aveSumRowArray.max
+    //Get the max value and key
+    val maxAveSum = aveSumRow.max
 
-    if(maxAveRowSum._2 < 0) return -1
+    if(maxAveSum._1 < 0) return -1
 
-    aveSumRowArray.indexOf(maxAveRowSum)
-    
-    //val initTimeInSeconds = (System.nanoTime() - initStartTime) / 1e9
-    
-    //logInfo(f"Calc took $initTimeInSeconds%.3f seconds.")
+    //Get the key of the highest average dissimilarity to all other objects
+    val key = maxAveSum._2
+
+    val inTimeSeconds = (System.nanoTime() - inStartTime) / 1e9
+
+    key
   }
-  
-  def diffAD(
-            x: IndexedRowMatrix,
-            y: IndexedRowMatrix
-            ): Int ={
-    //Get its size
-    val m = x.numRows()
-    val n = x.numCols()
-    val p = y.numRows()
-    val q = y.numCols()
 
-    // Average Sum of the elements in the row of matrix
-    val aveSumRow = x.rows.map{
-      case IndexedRow(i, value) => value.toArray.sum / (m - 1)
-    }
-
-    //Average Sum of the elements in the Splinter Group
-    val aveSumSplinter = y.rows.map{
-      case IndexedRow(i, value) => value.toArray.sum / q
-    }
-
-    //difference betweeen the Sum of the row of matrix and the elements from the Splinter Group
-    val diffSum = aveSumRow.zip(aveSumSplinter).map{
-      case (u,v) => u-v
-    }
-
-    val diffSumArray = diffSum.collect()
-
-    val maxDiffSum = diffSumArray.max
-
-    if(maxDiffSum < 0) return -1
-
-    diffSumArray.indexOf(maxDiffSum)
-  }
-  
-   /**
-    * Returns the manhattan distance between two vectors.
+  /**
+    * Average dissimilarity with the remaining objecy compare with the objects of the splinter group
     *
-    * This function is used for calculating dissimilarities.
-    * If the given data is already a dissimilarity matrix, this this will be ignored.... (?)
-    *
-    * The manhattan distance is used to measure the diameter of a cluster with the largest diameter.
-    * @param v1 first Vector
-    * @param v2 Second Vector
-    * @return distance between two Vectors
+    * @param remainGroup Dissimilarity matrix of the remaining objects
+    * @param splinterGroup Splinter group
+    * @return Key of the largest positive difference
     */
 
-  def absVal(v1: Vector, v2: Vector): Double ={
-    require(v1.size == v2.size, s"Vector dimensions do not match: Dim(v1) = ${v1.size} and Dim(v2)" +
-      s"=${v2.size}.")
-    var distance = 0.0
-    (v1, v2) match {
-      case (v1: SparseVector, v2: SparseVector) =>
-        val v1Values = v1.values
-        val v1Indices = v1.indices
-        val v2Values = v2.values
-        val v2Indices = v2.indices
-        val nnzv1 = v1Indices.length
-        val nnzv2 = v2Indices.length
+   def diffAD(
+            remainGroup: org.apache.spark.rdd.RDD[(Int, Array[Double])],
+            splinterGroup: org.apache.spark.rdd.RDD[Array[Double]]
+            ): Int ={
+    val m = (remainGroup.count).toInt
+    //val m = remainGroup.length  //maybe (x.count).toInt if it is RDD
+    val n = splinterGroup(1).length
 
-        var kv1 = 0
-        var kv2 = 0
-        while (kv1 < nnzv1 || kv2 < nnzv2) {
-          var score = 0.0
+    //Average Sum of the elements in the remain dissimilarity matrix
 
-          if(kv2 >= nnzv2 || (kv1 < nnzv1 && v1Indices(kv1) < v2Indices(kv2))) {
-            score = v1Values(kv1)
-            kv1 += 1
-          } else if (kv1 >= nnzv1 || (kv2 < nnzv2 && v2Indices(kv2) < v1Indices(kv1))){
-            score = v2Values(kv2)
-            kv2 += 1
-          } else {
-            score = v1Values(kv1) - v2Values(kv2)
-            kv1 += 1
-            kv2 += 1
-          }
-          distance += math.abs(score)
-        }
+    val aveSumRemain = remainGroup.map{ case (key, value) => (key, value.sum/(m-1))}
 
-      case(v1: SparseVector, v2: DenseVector) =>
-        distance = absVal(v1, v2)
+    //Average Sum of the elements in the splinter group
 
-      case(v1: DenseVector, v2: SparseVector) =>
-        distance = absVal(v2, v1)
+    val aveSumSplinter = splinterGroup.map{ case (value) => value.sum/n }
 
-      case(DenseVector(vv1), DenseVector(vv2)) =>
-        var kv = 1
-        val sz = vv1.length
-        while(kv < sz) {
-          val score = vv1(kv) - vv2(kv)
-          distance += math.abs(score)
-          kv += 1
-        }
-      case _ =>
-        throw new IllegalArgumentException("Do not support vector type" + v1.getClass +
-          " and " + v2.getClass)
-    }
-    math.abs(distance)
-}
-  
-def main(args: Array[String]): Unit ={
+    //Combine 2 Groups together
+
+    val combine = aveSumRemain.zip(aveSumSplinter) 
+
+    //difference between the Sum of the Remaining objects of each rows and the elements from the splinter group
+    val diffSum = combine.map{ case ((key, valueR), valueS) => (valueR-valueS, key)}
+
+    val maxDiffSum = diffSum.max
+
+    //Key of the largest positive difference
+
+    if(maxDiffSum._1 < 0) return -1 else maxDiffSum._2
+
+  } 
+
+  /**
+    * Dissimilarity of the remaining objects
+    *
+    * @param keyedmat dissimilarity matrix with a key
+    * @param keyA Array of the key of the highest average dissimilarity
+    * @param allKey Array of all of the keys
+    * @return dissimilarity matrix of the remaining objects
+    */
+
+  def objRemains(
+                keyedmat:org.apache.spark.rdd.RDD[(Int, Array[Double])],
+                keyA: Array[Int],
+                allKey: Array[Int]
+                ): org.apache.spark.rdd.RDD[(Int, Array[Double])] ={
+
+    val remainKeys = allKey diff keyA
+
+    val keyedValueRemove = keyedmat.map{ case(i, value) => (i, remainKeys map value)}
+
+    val remains = keyedValueRemove.filter{ case(i, value) => remainKeys.exists(_==i)}
+
+    remains
+  }
+
+  /**
+    * Dissimilarity of the Splinter Group
+    *
+    * @param keyedMat full dissimilarity matrix with a key
+    * @param key key of the highest average dissimilarity
+    * @param AllKey all of the keys (indexes)
+    * @return objects of splinter group
+    */
+
+  def objSplinter(
+               keyedMat:org.apache.spark.rdd.RDD[(Int, Array[Double])],
+               key: Array[Int],
+               AllKey: Array[Int]
+               ): org.apache.spark.rdd.RDD[Array[Double]] ={
+
+    // The remain keys(indexes)
+    val remainKeys = AllKey diff key
+
+    //filter out the remaining keys
+    val splinterObj = keyedMat.filter{ case (i, value) => remainKeys.exists(_==i)}
+
+    //from the filtered group, extract the objects of the splinter group
+    val splinter = splinterObj.map{ case(i, value) => key map value}
+
+    splinter
+
+  }
+
+  /**
+    * Select the cluster with the largest diameter
+    *
+    * @param fullMatrix
+    * @param remainGroup
+    * @param splinterkeys
+    * @return the cluster with the largest diameter
+    */
+
+/**  def largestDiam(
+                 fullMatrix: org.apache.spark.rdd.RDD[(Int, Array[Double])], //full matrix
+                 remainGroup: org.apache.spark.rdd.RDD[(Int, Array[Double])],
+                 splinterkeys: Array[Int]
+                 ): org.apache.spark.rdd.RDD[(Int, Array[Double])] ={
+
+    // make splinter group from matrix
+
+    // select the splinter group according to the splinter keys
+    val splinterRows = fullMatrix.filter{ case (i, value) => splinterkeys.exists(_==i)}
+
+    // only select the splinter index for the matrix
+    val splinterGroup: Array[(Int, Array[Double])] = splinterRows.map{ case(i, value) => (i, splinterkeys map value) }
+
+    // find the maximum "diameters" from each groups
+
+    val maxSplinter = splinterGroup.map{ case(i, value) => value.max }
+
+    val maxRemain = remainGroup.map{ case(i, value) => value.max }
+
+    // compare the chosen diameters from the groups
+    val splinterMax = maxSplinter.max
+
+    val remainMax = maxRemain.max
+
+    // chose the largest or the bigger diameter group
+
+    if(splinterMax > remainMax) return splinterGroup else remainGroup
+
+  } **/
+
+
+  def main(
+          args: Array[String]
+          ): Unit ={
 
     if(args.length < 1){
-      System.err.println("Usage: smallCal <file>")
+      System.err.println("Usage: DIANA <file>")
       System.exit(1)
     }
 
     //Create spark session
     val spark = SparkSession
-        .builder
-        .appName("Diana")
-        .getOrCreate()
+      .builder
+      .appName("Diana")
+      .getOrCreate()
 
     val sc = spark.sparkContext
 
     //load the data
-    val data = spark.read.format("csv").load(args(0)).cache()
+    val data = spark.read.format("csv").load(args(0))
 
-    //
     val dataC = data.collect()
 
     //Returns the number of rows in the Dataset
     val numRows = data.count().toInt
-    
+
     val longNum = numRows.toLong
 
     //Defining a two dimensional array
     var myMatrix = ofDim[Double](numRows, numRows)
 
-    //build a matrix
+    //build a Matrix
     for(i <- 0 until numRows){
       for(j <- 0 until numRows){
-        //System.err.println(dataC(i))
-	//System.err.println(dataC(i).getString(j))
         myMatrix(i)(j) = dataC(i).getString(j).toDouble
       }
     }
 
-    //Convert the data into Indexed Row Matrix
-    val seqMat = myMatrix.toSeq
+    // Key are equal to the indexes
+    val paraKey = sc.parallelize((0 until numRows))
 
-    val rows = sc.parallelize(seqMat).map{case (y) => IndexedRow(0L, Vectors.dense(y))}
+    val paraMat = sc.parallelize(myMatrix.toSeq)
 
-    val irm = new IndexedRowMatrix(rows, longNum, numRows)
+    val keyedMat = paraKey.zip(paraMat)
 
-    val rowLargestSum = indexRMAD(irm)
+    val largeKey = keyRMAD(keyedMat)
 
-    println("The row with the largest Sum: " + rowLargestSum)
+    println("The row with the largest Sum: " + largeKey) 
+
+    val allofKey = keyedMat.map{ case(i, key) => i }
+
+    val allKey = allofKey.collect
+    
+    var keyA : ArrayBuffer[Int] = ArrayBuffer()
+
+    keyA += largeKey
+
+    val aKey =  keyA.toArray
+
+    val objRem1 = objRemains(keyedMat, aKey, allKey)
+
+    val objSpl1 = objSplinter(keyedMat, aKey, allKey)
+
+    val aveDiff = diffAD(objRem1, objSpl1)
+  
+    println("The second largest Sum: " + aveDiff)
+
   }
+
+
+
 }
-
-val r = sc.parallelize(Seq(
-  (0L, Array(0.0,5.0,9.0,8.0)),
-  (0L, Array(5.0,0.0,4.0,5.0)),
-  (0L, Array(9.0,4.0,0.0,3.0)),
-  (0L, Array(8.0,5.0,3.0,0.0)))
-).map{ case (i, xs) => IndexedRow(i, Vectors.dense(xs))}
-

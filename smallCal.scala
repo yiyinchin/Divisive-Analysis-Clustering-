@@ -54,8 +54,8 @@ object DIANA {
             splinterGroup: org.apache.spark.rdd.RDD[Array[Double]]
             ): Int ={
     val m = (remainGroup.count).toInt
-    //val m = remainGroup.length  //maybe (x.count).toInt if it is RDD
-    val n = splinterGroup(1).length
+    val splint = splinterGroup.collect
+    val n = splint(1).length
 
     //Average Sum of the elements in the remain dissimilarity matrix
 

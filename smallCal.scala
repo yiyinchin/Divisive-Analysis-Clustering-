@@ -2,9 +2,6 @@ import org.apache.spark.sql.SparkSession
 import Array._
 import scala.collection.mutable.ArrayBuffer
 
-/**
-  * Created by chinyiy on 11/12/17.
-  */
 object DIANA {
 
 
@@ -139,9 +136,9 @@ object DIANA {
     * @param remainGroup
     * @param splinterkeys
     * @return the cluster with the largest diameter
-    */
+    **/
 
-/**  def largestDiam(
+  def largestDiam(
                  fullMatrix: org.apache.spark.rdd.RDD[(Int, Array[Double])], //full matrix
                  remainGroup: org.apache.spark.rdd.RDD[(Int, Array[Double])],
                  splinterkeys: Array[Int]
@@ -153,7 +150,7 @@ object DIANA {
     val splinterRows = fullMatrix.filter{ case (i, value) => splinterkeys.exists(_==i)}
 
     // only select the splinter index for the matrix
-    val splinterGroup: Array[(Int, Array[Double])] = splinterRows.map{ case(i, value) => (i, splinterkeys map value) }
+    val splinterGroup = splinterRows.map{ case(i, value) => (i, splinterkeys map value) }
 
     // find the maximum "diameters" from each groups
 
@@ -170,7 +167,7 @@ object DIANA {
 
     if(splinterMax > remainMax) return splinterGroup else remainGroup
 
-  } **/
+  }
 
 
   def main(

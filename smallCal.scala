@@ -13,9 +13,8 @@ object DIANA {
     *         returns -1 if the largest sum is less than zero
     */
 
-
   def keyRMAD(
-             keyedMat: org.apache.spark.rdd.RDD[(Int, Array[Double])]
+               keyedMat: org.apache.spark.rdd.RDD[(Int, Array[Double])]
              ): Int ={
     val m = (keyedMat.count).toInt
     //val m = x.length // maybe (x.count).toInt if the matrix is a RDD
@@ -26,7 +25,7 @@ object DIANA {
     val aveSumRow = keyedMat.map { case (i, value) => (value.sum / (m - 1), i)}
 
     //Get the max value and key
-    val maxAveSum = aveSumRow.max
+    val maxAveSum = (aveSumRow.collect).maxBy(x => x._1)
 
     if(maxAveSum._1 < 0) return -1
 
@@ -46,9 +45,9 @@ object DIANA {
     * @return Key of the largest positive difference
     */
 
-   def diffAD(
-            remainGroup: org.apache.spark.rdd.RDD[(Int, Array[Double])],
-            splinterGroup: org.apache.spark.rdd.RDD[Array[Double]]
+  def diffAD(
+              remainGroup: org.apache.spark.rdd.RDD[(Int, Array[Double])],
+              splinterGroup: org.apache.spark.rdd.RDD[Array[Double]]
             ): Int ={
     val m = (remainGroup.count).toInt
     val splint = splinterGroup.collect
@@ -64,18 +63,18 @@ object DIANA {
 
     //Combine 2 Groups together
 
-    val combine = aveSumRemain.zip(aveSumSplinter) 
+    val combine = aveSumRemain.zip(aveSumSplinter)
 
     //difference between the Sum of the Remaining objects of each rows and the elements from the splinter group
     val diffSum = combine.map{ case ((key, valueR), valueS) => (valueR-valueS, key)}
 
-    val maxDiffSum = diffSum.max
+    val maxDiffSum = (diffSum.collect).maxBy(x => x._1)
 
     //Key of the largest positive difference
 
-    if(maxDiffSum._1 < 0) return -1 else maxDiffSum._2
+    if(maxDiffSum._1 <= 0) return -1 else maxDiffSum._2
 
-  } 
+  }
 
   /**
     * Dissimilarity of the remaining objects
@@ -87,9 +86,9 @@ object DIANA {
     */
 
   def objRemains(
-                keyedmat:org.apache.spark.rdd.RDD[(Int, Array[Double])],
-                keyA: Array[Int],
-                allKey: Array[Int]
+                  keyedmat:org.apache.spark.rdd.RDD[(Int, Array[Double])],
+                  keyA: Array[Int],
+                  allKey: Array[Int]
                 ): org.apache.spark.rdd.RDD[(Int, Array[Double])] ={
 
     val remainKeys = allKey diff keyA
@@ -111,10 +110,10 @@ object DIANA {
     */
 
   def objSplinter(
-               keyedMat:org.apache.spark.rdd.RDD[(Int, Array[Double])],
-               key: Array[Int],
-               AllKey: Array[Int]
-               ): org.apache.spark.rdd.RDD[Array[Double]] ={
+                   keyedMat:org.apache.spark.rdd.RDD[(Int, Array[Double])],
+                   key: Array[Int],
+                   AllKey: Array[Int]
+                 ): org.apache.spark.rdd.RDD[Array[Double]] ={
 
     // The remain keys(indexes)
     val remainKeys = AllKey diff key
@@ -139,9 +138,9 @@ object DIANA {
     **/
 
   def largestDiam(
-                 fullMatrix: org.apache.spark.rdd.RDD[(Int, Array[Double])], //full matrix
-                 remainGroup: org.apache.spark.rdd.RDD[(Int, Array[Double])],
-                 splinterkeys: Array[Int]
+                   fullMatrix: org.apache.spark.rdd.RDD[(Int, Array[Double])], //full matrix
+                   remainGroup: org.apache.spark.rdd.RDD[(Int, Array[Double])],
+                   splinterkeys: Array[Int]
                  ): org.apache.spark.rdd.RDD[(Int, Array[Double])] ={
 
     // make splinter group from matrix
@@ -171,7 +170,7 @@ object DIANA {
 
 
   def main(
-          args: Array[String]
+            args: Array[String]
           ): Unit ={
 
     if(args.length < 1){
@@ -214,30 +213,21 @@ object DIANA {
 
     val keyedMat = paraKey.zip(paraMat)
 
-    val largeKey = keyRMAD(keyedMat)
-
-    println("The row with the largest Sum: " + largeKey) 
-
     val allofKey = keyedMat.map{ case(i, key) => i }
 
     val allKey = allofKey.collect
-    
+
     var keyA : ArrayBuffer[Int] = ArrayBuffer()
+
+    var splintKey : ArrayBuffer[Int] = ArrayBuffer()
+
+    val largeKey = keyRMAD(keyedMat)
 
     keyA += largeKey
 
     val aKey =  keyA.toArray
 
-    val objRem1 = objRemains(keyedMat, aKey, allKey)
-
-    val objSpl1 = objSplinter(keyedMat, aKey, allKey)
-
-    val aveDiff = diffAD(objRem1, objSpl1)
-  
-    println("The second largest Sum: " + aveDiff)
+    val remainA = allKey.filterNot{ case(i) => aKey.exists(_==i)}
 
   }
-
-
-
 }

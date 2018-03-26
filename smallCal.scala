@@ -51,7 +51,9 @@ object DIANA {
             ): Int ={
     val m = (remainGroup.count).toInt
     val splint = splinterGroup.collect
-    val n = splint(1).length
+    val n = splint(0).length
+
+    //val n = splint(0).length = = which is which
 
     //Average Sum of the elements in the remain dissimilarity matrix
 
@@ -72,7 +74,13 @@ object DIANA {
 
     //Key of the largest positive difference
 
-    if(maxDiffSum._1 <= 0) return -1 else maxDiffSum._2
+    if(maxDiffSum._1 <= 0){
+      -1
+    } else if(m == 1){
+      val remainKey = remainGroup.map{ case(i, value) => i}
+      val rK = remainKey.collect
+      rK(0)
+    } else maxDiffSum._2
 
   }
 

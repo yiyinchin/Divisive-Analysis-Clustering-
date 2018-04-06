@@ -336,9 +336,10 @@ object DIANA {
 
         println("Height between " + stringOf(keys) + " is " + diameters)
 
-        //save the heights
+        //save the heights still fixing this part
         val minHeight = (keys.min) + 1
         clustHei.update(minHeight, diameters)
+        
         println("The index of the height is " + minHeight + " the height is " + diameters)
 
         //get the remaining heights of the clusters
@@ -385,7 +386,8 @@ object DIANA {
             val keyR = inputKey diff keyS // get the remain groups
 
             println("The height of: " + stringOf(keyR) + " & " + stringOf(keyS) + " is " + stringOf(height1))
-
+            
+            //Save the heights, fixing this part.....
             val keyPoint = splinterKeys.length
             val keySplinter = keyS.length
 

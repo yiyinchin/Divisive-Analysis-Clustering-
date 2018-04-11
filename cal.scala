@@ -319,7 +319,19 @@ object DIANA {
     for (i <- 1 to lengthClust) {
       clustHeight += 0.0
     }
-    val clustHei = clustHeight.toArray
+    val clustHei = clustHeight.toArray//The height of the clusters
+    
+    //The order of the splinters
+    var orderSplinter : ArrayBuffer[Int] = ArrayBuffer()
+
+    for(i <- 1 to lengthClust) {
+      orderSplinter += 0
+    }
+    val splintOrd = orderSplinter.toArray
+    
+    //test 1 to save the arrays(with the order of the splinters
+    val test = new scala.collection.mutable.Stack[Array[Int]]
+    test.push(Array(0))
 
     while (found < end) {
       //while number of clusters is less than the number of clusters at the end
@@ -387,20 +399,24 @@ object DIANA {
 
             println("The height of: " + stringOf(keyR) + " & " + stringOf(keyS) + " is " + stringOf(height1))
             
-            //Save the heights, fixing this part.....
-            val keyPoint = splinterKeys.length
-            val keySplinter = keyS.length
+            //Save the heights, fixing this part....
+            val minSplinterKeys = keyS.min
+            val minRemainKeys = keyR.min
+            val remainLength = keyR.length
+            val splinterLength = keyS.length
 
-            println("Key Point: " + keyPoint)
-            println("Key Splinter: " + keySplinter)
-
-            if (keyPoint < keySplinter) {
-              clustHei.update(keyPoint, height1)
+            if(minRemainKeys < minSplinterKeys){
+              test.pop
+              test.push(keyS)
+              test.push(keyR)
+              println("tests 1: " + stringOf(test) )
             }
-            else {
-              clustHei.update((keySplinter + 1), height1)
+            else{
+              test.pop
+              test.push(keyR)
+              test.push(keyS)
+              println("Tests 2: " + stringOf(test))
             }
-
             val inputKeyPrev = inputKey
 
             //find the next initial splinter

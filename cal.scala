@@ -269,14 +269,18 @@ object DIANA {
     //Compare the current element to the left, pick the lower height
     val size = heights.length
     val heightsCurrent = heights.clone
-    for(a <- 1 until size){
-      if(heightsCurrent(a) < heights(a -1)){
-        heightsCurrent.update(a, heights(a-1))
+    for(a <- 1 until size -1){
+      if(heights(a) > heights(a + 1)){
+        heightsCurrent.update(a, heights(a+1))
       }
     }
 
+    println("Current height: " + stringOf(heightsCurrent))
+
     //Find the maximum height
-    val maxHeight = heightsCurrent.max
+    val maxHeight = heights.max
+
+    println("max height: " + maxHeight)
 
     //1 - the division of each element of the heights with the maximum height
     val dc = heightsCurrent.map{ case (i) => 1 - (i/maxHeight)}
@@ -286,7 +290,7 @@ object DIANA {
     val aveDC = sumDC/size
 
     aveDC
-  }  
+  }
 
   def main(
             args: Array[String]
@@ -356,7 +360,6 @@ object DIANA {
     // The heights
     val lengthClust = allKey.length
     var clustHeight: ArrayBuffer[Double] = ArrayBuffer()
-
     for (i <- 1 to lengthClust) {
       clustHeight += 0.0
     }
@@ -365,18 +368,10 @@ object DIANA {
     while (found < end) {
       //while number of clusters is less than the number of clusters at the end
       //LargeDiam is the cluster with the largest Diameter, so the next to be split
-
       size = ((largeDiam.map { case (i, value) => i }).collect).length
-      println("Size: " + size)
-
       if (size == 2) {
-
         diameters = diameter(largeDiam)
-
         val keys = (largeDiam.map { case (i, value) => i }).collect
-
-        println("Height between " + stringOf(keys) + " is " + diameters)
-
         val molly = secOrder.exists(_.sameElements(keys))
         val soughtObject = secOrder.filter(_.sameElements(keys))
         val indexOldSplinters = secOrder.indexOf(soughtObject(0))
@@ -399,16 +394,10 @@ object DIANA {
           }
         }
         val lengthLeft = (clustOrder.map{ case(i) => i.length}).toArray
-        println("Lengthsssss: " + stringOf(lengthLeft))
         val cosmos = (lengthLeft.take(indexOldSplinters+1)).sum
         clustHei.update(cosmos, diameters)
-        println("COSMOS?!: " + stringOf(cosmos))
-
-        println("Change of the orders: " + stringOf(clustOrder))
-        println("Banner: " + stringOf(clustHei))
 
         //get the remaining heights of the clusters
-
         if (stack.isEmpty) {
 
         } else {
@@ -445,21 +434,15 @@ object DIANA {
 
             //save the remaining group of the cluster and record the current height
             val remain = groups(splinterKeys, inputKey, keyedMat)
-            val height1 = height(splintObj, remainObj) //TODO record this outside the loop
-
-            //Find the next initial cluster
+            val height1 = height(splintObj, remainObj)
+            
             val inputKeyPrev = inputKey
-
-            println("Whats the input key 1: " + stringOf(inputKeyPrev))
-
             val keyS = splinterKeys//get the splinterIndex groups
             val keyR = inputKey diff keyS // get the remain groups
             val sKey = keyS.sorted
             val sLength = keyS.length
             val rLength = keyR.length
-
-            println("The height of: " + stringOf(keyR) + " & " + stringOf(keyS) + " is " + stringOf(height1))
-
+            
             if(clustOrder.isEmpty){
               val sKey = keyS.sorted
               if(keyS.min < keyR.min){
@@ -480,10 +463,7 @@ object DIANA {
               val molly = secOrder.exists(_.sameElements(inputKeyPrev))
               val soughtObject = secOrder.filter(_.sameElements(inputKeyPrev))
               val indexOldSplinters = secOrder.indexOf(soughtObject(0))
-              println("Index old splinters: " + stringOf(indexOldSplinters))
-              println("Remain length: " + stringOf(rLength))
-              println("Splinter Length: " + stringOf(sLength))
-
+              
               if(molly){ // if (molly == true)
                 // keyS is not ordered, so sKey used when inserting
                 if(keyR.min < keyS.min) {
@@ -500,13 +480,8 @@ object DIANA {
                 }
               }
               val lengthLeft = (clustOrder.map{ case(i) => i.length}).toArray
-              println("Lengthsssss: " + stringOf(lengthLeft))
               val cosmos = (lengthLeft.take(indexOldSplinters+1)).sum
               clustHei.update(cosmos, height1)
-              println("COSMOS?!: " + stringOf(cosmos))
-
-              println("Change of the orders: " + stringOf(clustOrder))
-              println("Banner: " + stringOf(clustHei))
             }
 
             //Find the next initial cluster
@@ -526,8 +501,9 @@ object DIANA {
         }
       }
       found = found + 1
-      println(" ")
-      println("Found: " + found)
     }
+    println("Splinter Objects: " + stringOf(clustOrder))
+    println("Banner: " + stringOf(clustHei))
+    println("Divisive Coefficient: " + stringOf(divisiveCoef(clustHei)))
   }
 }

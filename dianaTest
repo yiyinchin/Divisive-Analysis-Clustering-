@@ -1,0 +1,436 @@
+import org.apache.spark.sql.SparkSession
+import scala.runtime.ScalaRunTime._
+import Array._
+import scala.collection.mutable.ArrayBuffer
+
+object DIANA {
+
+
+  /**
+    * key of the row with the highest Average Dissimilarity to the other objects
+    *
+    * @param keyedMat dissimilarity matrix with key
+    * @return the key of the row with larges non-negative sum
+    *         returns -1 if the largest sum is less than zero
+    */
+
+
+  def keyRMAD(
+               keyedMat: org.apache.spark.rdd.RDD[(Int, Array[Double])]
+             ): Int = {
+    val m = (keyedMat.count).toInt
+
+    //Average Sum of the elements in the row of matrix
+    val maxAveSum = keyedMat.map { case (i, value) => (value.sum / (m - 1), i) }.max()
+
+    //Get the key of the highest average dissimilarity to all other objects
+    if (maxAveSum._1 < 0){
+      -1
+    }else{
+      maxAveSum._2
+    }
+  }
+
+  /**
+    * Average dissimilarity with the remaining objecy compare with the objects of the splinter group
+    *
+    * @param remainGroup   Dissimilarity matrix of the remaining objects
+    * @param splinterGroup Splinter group
+    * @return Key of the largest positive difference
+    */
+
+  def diffAD(
+              remainGroup: org.apache.spark.rdd.RDD[(Int, Array[Double])],
+              splinterGroup: org.apache.spark.rdd.RDD[Array[Double]]
+            ): Int = {
+    val m = (remainGroup.count).toInt
+    val n = splinterGroup.map{ i => i.length}.first
+
+    //Combination of Average Sum of the elements in the remain dissimilarity matrix & Average Sum of Elements in the Splinter Group
+
+    val combine = remainGroup.map { case (key, value) =>
+      (key, value.sum / (m - 1)) }.zip{splinterGroup.map{ case(value) =>
+      (value.sum / n)}}
+
+    //difference between the Sum of the Remaining objects of each rows and the elements from the splinter group
+    val maxDiffSum = combine.map{ case ((key, valueR), valueS) => (valueR - valueS, key) }.max()
+
+    //Key of the largest positive difference
+    if (maxDiffSum._1 <= 0) {
+      -1
+    } else if (m == 1) {
+      val remainKey = remainGroup.map { case (i, value) => i }.first
+      remainKey
+    } else maxDiffSum._2
+  }
+
+  /**
+    * Dissimilarity of the remaining objects
+    *
+    * @param fullMatrix dissimilarity matrix with a key
+    * @param splinterKeys     Array of the key of the highest average dissimilarity
+    * @param allKey   Array of all of the keys
+    * @return dissimilarity matrix of the remaining objects
+    */
+
+  def objRemains(
+                  fullMatrix: org.apache.spark.rdd.RDD[(Int, Array[Double])],
+                  splinterKeys: Array[Int],
+                  allKey: Array[Int]
+                ): org.apache.spark.rdd.RDD[(Int, Array[Double])] = {
+
+    val remainKeys = allKey diff splinterKeys
+
+    val remains = fullMatrix.map { case (i, value) =>
+      (i, remainKeys map value) }.filter{ case(i, value) =>
+      remainKeys.exists(_==i)}
+
+    remains
+
+  }
+
+  /**
+    * Dissimilarity of the Splinter Group
+    *
+    * @param fullMatrix full dissimilarity matrix with a key
+    * @param splinterKeys      key of the highest average dissimilarity
+    * @param AllKey   all of the keys (indexes)
+    * @return objects of splinter group
+    */
+
+  def objSplinter(
+                   fullMatrix: org.apache.spark.rdd.RDD[(Int, Array[Double])],
+                   splinterKeys: Array[Int],
+                   AllKey: Array[Int]
+                 ): org.apache.spark.rdd.RDD[Array[Double]] = {
+
+    // The remain keys(indexes)
+    val remainKeys = AllKey diff splinterKeys
+
+    //filter out the remaining keys and extract the objects of the splinter group
+    val splinter = fullMatrix.filter { case (i, value) =>
+      remainKeys.exists(_ == i) }.map{ case(i, value) =>
+      splinterKeys map value}
+
+    splinter
+
+  }
+
+  /**
+    * Select the cluster with the largest diameter
+    *
+    * @param fullMatrix
+    * @param remainGroup
+    * @param splinterKeys
+    * @return the cluster with the largest diameter
+    **/
+
+  def largestDiam(
+                   fullMatrix: org.apache.spark.rdd.RDD[(Int, Array[Double])], //full matrix
+                   remainGroup: org.apache.spark.rdd.RDD[(Int, Array[Double])],
+                   splinterKeys: Array[Int]
+                 ): org.apache.spark.rdd.RDD[(Int, Array[Double])] = {
+    // make splinter group from matrix
+    // select the splinter group according to the splinter keys
+    val splinterGroup = fullMatrix.map{ case (i, value) =>
+      (i, splinterKeys map value)}.filter { case (i, value) =>
+      splinterKeys.exists(_ == i) }
+
+    // find the maximum "diameters" from each groups
+    val maxSplinter = splinterGroup.map { case (i, value) => value.max}.max
+
+    val maxRemain = remainGroup.map { case (i, value) => value.max }.max
+
+    // chose the largest or the bigger diameter group
+    if (maxSplinter > maxRemain) return splinterGroup else remainGroup
+  }
+
+  /**
+    * Gives you the dissimilarity matrix of the remaining group with indexes
+    *
+    * @param splinterKeys indexes of the splinter group
+    * @param allKeys      all of the keys (all indexes)
+    * @param fullMatrix   full dissimilarity matrix with a key
+    * @return dissimilarity matrix of the remaining group
+    */
+
+  def groups(
+              splinterKeys: Array[Int],
+              allKeys: Array[Int],
+              fullMatrix: org.apache.spark.rdd.RDD[(Int, Array[Double])]
+            ): org.apache.spark.rdd.RDD[(Int, Array[Double])] = {
+    val remainKeys = allKeys diff splinterKeys
+
+    val remainRows = fullMatrix.filter { case (i, value) =>
+      remainKeys.exists(_ == i) }.map{ case(i, value) =>
+      (i, splinterKeys map value)}
+
+    remainRows
+  }
+
+  /**
+    * Find the height of the clusters only can be applied when the clusters only left 2 elements
+    *
+    * @param remainGroup Remaining group, with key
+    * @return height
+    */
+
+  def diameter(
+                remainGroup: org.apache.spark.rdd.RDD[(Int, Array[Double])]
+              ): Double = {
+
+    val maxDia = remainGroup.map { case (i, value) => value.max }.max
+
+    maxDia
+  }
+
+  /**
+    * Find the height of the clusters (singleton)
+    *
+    * @param splinterGroup Splinter group, two dimension
+    * @param remainGroup   Remaining group, with key
+    * @return Height
+    */
+
+
+  def height(
+              splinterGroup: org.apache.spark.rdd.RDD[Array[Double]],
+              remainGroup: org.apache.spark.rdd.RDD[(Int, Array[Double])]
+            ): Double = {
+    // find the maximum "diameters" from each groups
+    val maxSplinter = splinterGroup.map { case (value) => value.max }.max
+    val maxRemain = remainGroup.map { case (i, value) => value.max }.max
+
+    // compare the chosen diameters from the groups
+    // chose the largest or the bigger diameter group
+    if (maxSplinter > maxRemain) return maxSplinter else maxRemain
+
+  }
+
+  /**
+    * Divisive coefficient
+    *
+    * @param heights The numbers of when it splits
+    * @return Divisive coefficient
+    */
+
+  def divisiveCoef(
+                    heights : Array[Double]
+                  ): Double ={
+    //Find the first height of the first element
+    if(heights(0) == 0.0){
+      heights.update(0, heights(1))
+    }
+
+    //Compare the current element to the left, pick the lower height
+    val size = heights.length
+    val heightsCurrent = heights.clone
+    for(a <- 1 until size -1){
+      if(heights(a) > heights(a + 1)){
+        heightsCurrent.update(a, heights(a+1))
+      }
+    }
+
+    println("Current height: " + stringOf(heightsCurrent))
+
+    //Find the maximum height
+    val maxHeight = heights.max
+
+    println("max height: " + maxHeight)
+
+    //1 - the division of each element of the heights with the maximum height
+    val aveDC = (heightsCurrent.map{ case (i) => 1 - (i/maxHeight)}.sum)/size
+
+    aveDC
+  }
+
+  def main(
+            args: Array[String]
+          ): Unit = {
+
+    if (args.length < 1) {
+      System.err.println("Usage: DIANA <file>")
+      System.exit(1)
+    }
+
+    //Create spark session
+    val spark = SparkSession
+      .builder
+      .appName("Diana")
+      .getOrCreate()
+
+    val sc = spark.sparkContext
+    val session = SparkSession.builder().appName("test").master("local").getOrCreate()
+    val data = session.read.format("csv").load(args(0))
+    val dataC = data.collect() //TODO
+    val numRows = data.count().toInt //Returns the number of rows in the Dataset
+    val longNum = numRows.toLong
+    var myMatrix = ofDim[Double](numRows, numRows) //Defining a two dimensional array
+
+    //build a Matrix
+    for (i <- 0 until numRows) {
+      for (j <- 0 until numRows) {
+        myMatrix(i)(j) = dataC(i).getString(j).toDouble
+      }
+    }
+
+    // Key are equal to the indexes
+    val paraKey = sc.parallelize((0 until numRows), 4)
+    val paraMat = sc.parallelize(myMatrix.toSeq, 4)
+    //Matrix with Indexes
+    val keyedMat = paraKey.zip(paraMat)
+    val allKey = (keyedMat.map { case (i, key) => i }).collect //TODO
+    var keyA: ArrayBuffer[Int] = ArrayBuffer() // The splinter indexes (ArrayBuffer)
+    var splinterKeys: Array[Int] = Array(0) // The splinter indexes (Array)
+    var inputKey = allKey // The input indexes for the next clustering
+    var splinterIndex = 0 // largest positive splinter from the cluster
+    var end = allKey.length
+    var found = 1
+    var largeDiam = keyedMat //The matrix for clustering, the next cluster to split
+    var size = 0 //Size of the matrix
+    var diameters = 0.0 // The Height
+    val stack = new scala.collection.mutable.Stack[Array[Int]] // The remaining indexes
+    var sizeR = 0 // The size of the remaining cluster
+    var clustOrder : ArrayBuffer[Array[Int]] = ArrayBuffer() // The order of the splinters
+    var secOrder : ArrayBuffer[Array[Int]] = ArrayBuffer() // The secret sorting order of the splinters
+    val lengthClust = allKey.length  // The heights
+    var clustHeight: ArrayBuffer[Double] = ArrayBuffer()
+
+    for (i <- 1 to lengthClust) {
+      clustHeight += 0.0
+    }
+    val clustHei = clustHeight.toArray
+
+    while (found < end) {
+      //while number of clusters is less than the number of clusters at the end
+      //LargeDiam is the cluster with the largest Diameter, so the next to be split
+      size = ((largeDiam.map { case (i, value) => i }).collect).length
+
+      if (size == 2) {
+        diameters = diameter(largeDiam)
+        val keys = (largeDiam.map { case (i, value) => i }).collect
+        val checkOrder = secOrder.exists(_.sameElements(keys))
+        val soughtObject = secOrder.filter(_.sameElements(keys))
+        val indexOldSplinters = secOrder.indexOf(soughtObject(0))
+        var firstElement = (ArrayBuffer(keys(0))).toArray
+        var secondElement = (ArrayBuffer(keys(1))).toArray
+
+        if(checkOrder){ // if (checkOrder == true)
+          if(firstElement.min < secondElement.min) {
+            clustOrder.update(indexOldSplinters, firstElement)
+            clustOrder.insert(indexOldSplinters + 1, secondElement)
+            secOrder.update(indexOldSplinters, firstElement)
+            secOrder.insert(indexOldSplinters + 1, secondElement)
+          }
+          else{
+            clustOrder.update(indexOldSplinters, secondElement)
+            clustOrder.insert(indexOldSplinters + 1, firstElement)
+            secOrder.update(indexOldSplinters, secondElement)
+            secOrder.insert(indexOldSplinters + 1, firstElement)
+          }
+        }
+        val lengthLeft = (clustOrder.map{ case(i) => i.length}).toArray
+        val cosmos = (lengthLeft.take(indexOldSplinters+1)).sum
+        clustHei.update(cosmos, diameters)
+
+        //get the remaining heights of the clusters
+        if (stack.isEmpty) {
+        } else {
+          val reKeys = stack.pop
+          val remainA = keyedMat.filter { case (i, value) => reKeys.exists(_ == i) }
+          val remainClustA = remainA.map { case (i, value) => (i, reKeys map value) }
+          largeDiam = remainClustA
+          inputKey = (remainClustA.map { case (i, value) => i }).collect
+        }
+      }
+      else {
+        //Find the splinter element from the cluster
+        splinterIndex = keyRMAD(largeDiam)
+        keyA += splinterIndex
+        splinterKeys = keyA.toArray
+
+        while (splinterIndex != -1) {
+          // Find the rest of the splinter group from the cluster
+          val splintObj = objSplinter(keyedMat, splinterKeys, inputKey)
+          val remainObj = objRemains(keyedMat, splinterKeys, inputKey)
+          splinterIndex = diffAD(remainObj, splintObj) // largest positive splinter from the cluster
+          if (splinterIndex != -1) {
+            // add to the set of splinter keys
+            keyA += splinterIndex
+            splinterKeys = keyA.toArray
+          }
+          else {
+            // -1, so no more splinter elements from this cluster
+            // record current split and set up next splinter
+            //save the remaining group of the cluster and record the current height
+            val remain = groups(splinterKeys, inputKey, keyedMat)
+            val height1 = height(splintObj, remainObj)
+
+            val inputKeyPrev = inputKey
+            val keyS = splinterKeys//get the splinterIndex groups
+            val keyR = inputKey diff keyS // get the remain groups
+            val sKey = keyS.sorted
+            val sLength = keyS.length
+            val rLength = keyR.length
+            if(clustOrder.isEmpty){
+              val sKey = keyS.sorted
+              if(keyS.min < keyR.min){
+                clustOrder += keyS
+                clustOrder += keyR
+                secOrder += sKey
+                secOrder += keyR
+                clustHei.update(sLength, height1)
+              } else {
+                clustOrder += keyR
+                clustOrder += keyS
+                secOrder += keyR
+                secOrder += sKey
+                clustHei.update(rLength, height1)
+              }
+            }
+            else {
+              val checkOrder = secOrder.exists(_.sameElements(inputKeyPrev))
+              val soughtObject = secOrder.filter(_.sameElements(inputKeyPrev))
+              val indexOldSplinters = secOrder.indexOf(soughtObject(0))
+
+              if(checkOrder){ // if (checkOrder == true)
+                // keyS is not ordered, so sKey used when inserting
+                if(keyR.min < keyS.min) {
+                  clustOrder.update(indexOldSplinters, keyR)
+                  clustOrder.insert(indexOldSplinters + 1, keyS)
+                  secOrder.update(indexOldSplinters, keyR)
+                  secOrder.insert(indexOldSplinters + 1, sKey)
+                }
+                else{
+                  clustOrder.update(indexOldSplinters, keyS)
+                  clustOrder.insert(indexOldSplinters + 1, keyR)
+                  secOrder.update(indexOldSplinters, sKey)
+                  secOrder.insert(indexOldSplinters + 1, keyR)
+                }
+              }
+              val lengthLeft = (clustOrder.map{ case(i) => i.length}).toArray
+              val cosmos = (lengthLeft.take(indexOldSplinters+1)).sum
+              clustHei.update(cosmos, height1)
+            }
+            //Find the next initial cluster
+            largeDiam = largestDiam(keyedMat, remainObj, splinterKeys)
+            val inputKey1 = largeDiam.map { case (i, value) => i }
+            inputKey = inputKey1.collect
+
+            val keyRemain = inputKeyPrev diff inputKey
+            val numKeys = keyRemain.length
+            if (numKeys > 1) {
+              stack.push(keyRemain)
+            }
+            keyA = ArrayBuffer()
+          }
+        }
+      }
+      found = found + 1
+    }
+    println("The orders: " + stringOf(clustOrder))
+    println("Banner: " + stringOf(clustHei))
+    val dC = divisiveCoef(clustHei)
+
+  }
+}

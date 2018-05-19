@@ -22,17 +22,13 @@
 
     while (found < end) {
       val startTime433 = System.nanoTime()
-
       //while number of clusters is less than the number of clusters at the end
       //LargeDiam is the cluster with the largest Diameter, so the next to be split
       size = ((largeDiam.map { case (i, value) => i }).collect).length
-
       val inTimeSeconds436 = (System.nanoTime() - startTime433) / 1e9
       println("Time Taken for line 436 : " + inTimeSeconds436)
-
       if (size == 2) {
         val ifSize2StartTime = System.nanoTime()
-
         diameters = diameter(largeDiam)
         val keys = (largeDiam.map { case (i, value) => i }).collect
         val checkOrder = secOrder.exists(_.sameElements(keys))
@@ -40,45 +36,36 @@
         val indexOldSplinters = secOrder.indexOf(soughtObject(0))
         var firstElement = (ArrayBuffer(keys(0))).toArray
         var secondElement = (ArrayBuffer(keys(1))).toArray
-
         val inTimeSeconds442 = (System.nanoTime() - ifSize2StartTime) / 1e9
         println("Time Taken for line 442-448 : " + inTimeSeconds442)
-
         if(checkOrder){ // if (checkOrder == true)
           if(firstElement.min < secondElement.min) {
             val ifCheckStartTime = System.nanoTime()
-
             clustOrder.update(indexOldSplinters, firstElement)
             clustOrder.insert(indexOldSplinters + 1, secondElement)
             secOrder.update(indexOldSplinters, firstElement)
             secOrder.insert(indexOldSplinters + 1, secondElement)
-
             val inTimeSeconds456 = (System.nanoTime() - ifCheckStartTime) / 1e9
             println("Time Taken for line 456-459 : " + inTimeSeconds456)
             loop3 = loop3 + 1
           }
           else{
             val elseCheckStartTime = System.nanoTime()
-
             clustOrder.update(indexOldSplinters, secondElement)
             clustOrder.insert(indexOldSplinters + 1, firstElement)
             secOrder.update(indexOldSplinters, secondElement)
             secOrder.insert(indexOldSplinters + 1, firstElement)
-
             val inTimeSeconds466 = (System.nanoTime() - elseCheckStartTime) / 1e9
             println("Time Taken for line 466-469  : " + inTimeSeconds466)
             loop4 = loop4 + 1
-
           }
           loop5 = loop5 + 1
         }
         val lengthLeft = (clustOrder.map{ case(i) => i.length}).toArray
         val cosmos = (lengthLeft.take(indexOldSplinters+1)).sum
         clustHei.update(cosmos, diameters)
-
         val inTimeSeconds478 = (System.nanoTime() - ifSize2StartTime) / 1e9
         println("Time Taken for line 442-478 : " + inTimeSeconds478)
-
         //get the remaining heights of the clusters
         if (stack.isEmpty) {
           val timeLine484 = System.nanoTime()
@@ -87,33 +74,27 @@
           loop6 = loop6 + 1
         } else {
           val timeLine495 = System.nanoTime()
-
           val reKeys = stack.pop
           val remainA = keyedMat.filter { case (i, value) => reKeys.exists(_ == i) }
           val remainClustA = remainA.map { case (i, value) => (i, reKeys map value) }
           largeDiam = remainClustA
           inputKey = (remainClustA.map { case (i, value) => i }).collect
-
           val inTimeSeconds495 = (System.nanoTime() - timeLine495) / 1e9
           println("Time Taken for line 496-501 : " + inTimeSeconds495)
           loop7 = loop7 + 1
         }
         val inTimeSeconds507 = (System.nanoTime() - ifSize2StartTime) / 1e9
         println("Time Taken for line 447-505 : " + inTimeSeconds507)
-
         loop1 = loop1 + 1
       }
       else {
         val elseNot2StartTime = System.nanoTime()
-
         //Find the splinter element from the cluster
         splinterIndex = keyRMAD(largeDiam)
         keyA += splinterIndex
         splinterKeys = keyA.toArray
-
         val inTimeSeconds518 = (System.nanoTime() - elseNot2StartTime) / 1e9
         println("Time Taken for line 516-518: " + inTimeSeconds518)
-
         while (splinterIndex != -1) {
           val SINot1StartTime = System.nanoTime()
           // Find the rest of the splinter group from the cluster
